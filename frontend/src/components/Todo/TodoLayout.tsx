@@ -2,37 +2,36 @@ import React, { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 
-//components imports
-import Input from '../common/Input.tsx';
-import Button from '../common/Button.tsx';
-import TodoItem from './TodoItem.tsx';
-import TodosLoader from './TodosLoader.tsx';
+// Components
+import Input from '../common/Input';
+import Button from '../common/Button';
+import TodoItem from './TodoItem';
+import TodosLoader from './TodosLoader';
 
-//types imports
-import { UserState } from '../../types/user.ts';
-import { Todo, TodoState } from '../../types/todo.ts';
+// Types
+import { UserState } from '../../types/user';
+import { Todo, TodoState } from '../../types/todo';
 
-//context imports
-import AuthContext from '../../context/auth/AuthContext.tsx';
-import TodoContext from '../../context/todo/TodoContext.ts';
+// Contexts
+import AuthContext from '../../context/auth/AuthContext';
+import TodoContext from '../../context/todo/TodoContext';
 
-//icons imports
-import twitterIcon from '../../assets/twitter.svg';
+// Icon
 import githubIcon from '../../assets/github.svg';
 
 const TodoLayout = () => {
   const navigate = useNavigate();
-  // const [id, setId] = useState<string>('0');
+
   const [currTodo, setCurrTodo] = useState<Todo>({
     title: '',
     description: '',
     completed: false,
   });
+
   const { logout }: UserState = useContext(AuthContext);
   const {
     todos,
     todoLoading,
-    loading,
     error,
     getTodos,
     createTodo,
@@ -42,152 +41,78 @@ const TodoLayout = () => {
   } = useContext<TodoState>(TodoContext);
 
   const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCurrTodo({
-      ...currTodo,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  const checkValid = () => {
-    if (currTodo.title === '' || currTodo.description === '') {
-      toast.error('Please fill all the fields', {
-        style: {
-          background: '#333',
-          color: '#fff',
-        },
-      });
-      return false;
-    }
-
-    return true;
+    setCurrTodo({ ...currTodo, [e.target.name]: e.target.value });
   };
 
   const clearCurrTodo = () => {
-    setCurrTodo({
-      title: '',
-      description: '',
-      completed: false,
-    });
+    setCurrTodo({ title: '', description: '', completed: false });
+  };
+
+  const checkValid = () => {
+    if (!currTodo.title.trim() || !currTodo.description.trim()) {
+      toast.error('Please fill all the fields', {
+        style: { background: '#333', color: '#fff' },
+      });
+      return false;
+    }
+    return true;
   };
 
   const addTodoHandler = async () => {
     const loadingToast = toast.loading('Adding Todo...', {
-      style: {
-        background: '#333',
-        color: '#fff',
-      },
+      style: { background: '#333', color: '#fff' },
     });
-    try {
-      if (!checkValid()) {
-        toast.dismiss(loadingToast);
-        return;
-      }
 
-      if (!createTodo) {
-        toast.error('Something went wrong', {
-          style: {
-            background: '#333',
-            color: '#fff',
-          },
-        });
-        return;
-      }
+    if (!checkValid()) {
+      toast.dismiss(loadingToast);
+      return;
+    }
 
-      createTodo(currTodo);
-      if (!error) {
-        toast.success('Todo Added Successfully', {
-          style: {
-            background: '#333',
-            color: '#fff',
-          },
-        });
-        toast.dismiss(loadingToast);
-        clearCurrTodo();
-      }
-    } catch (err) {
-      toast.error(error as string, {
-        style: {
-          background: '#333',
-          color: '#fff',
-        },
+    const success = await createTodo?.(currTodo);
+    toast.dismiss(loadingToast);
+
+    if (success) {
+      toast.success('Todo Added Successfully', {
+        style: { background: '#333', color: '#fff' },
       });
+      clearCurrTodo();
     }
   };
 
   const markCompleteHandler = async (id: string) => {
-    try {
-      const loadingToast = toast.loading('Marking Todo as Done...', {
-        style: {
-          background: '#333',
-          color: '#fff',
-        },
+    const loadingToast = toast.loading('Marking as Done...', {
+      style: { background: '#333', color: '#fff' },
+    });
+
+    const success = await markComplete?.(id);
+    toast.dismiss(loadingToast);
+
+    if (success) {
+      toast.success('Marked as Done', {
+        style: { background: '#333', color: '#fff' },
       });
-
-      if (!markComplete) {
-        toast.error('Something went wrong', {
-          style: {
-            background: '#333',
-            color: '#fff',
-          },
-        });
-        return;
-      }
-
-      markComplete(id);
-      if (!error && !loading) {
-        toast.success('Todo Marked as Done Successfuly', {
-          style: {
-            background: '#333',
-            color: '#fff',
-          },
-        });
-        toast.dismiss(loadingToast);
-      }
-    } catch (err) {
-      toast.error(error as string, {
-        style: {
-          background: '#333',
-          color: '#fff',
-        },
+    } else {
+      toast.error('Failed to mark as done', {
+        style: { background: '#333', color: '#fff' },
       });
     }
   };
 
   const deleteTodoHandler = async (id: string) => {
-    try {
-      const loadingToast = toast.loading('Deleting Todo...', {
-        style: {
-          background: '#333',
-          color: '#fff',
-        },
+    const loadingToast = toast.loading('Deleting Todo...', {
+      style: { background: '#333', color: '#fff' },
+    });
+
+    const success = await deleteTodo?.(id);
+    toast.dismiss(loadingToast);
+
+    if (success) {
+      toast.success('Deleted Successfully', {
+        style: { background: '#333', color: '#fff' },
       });
-
-      if (!deleteTodo) {
-        toast.error('Something went wrong', {
-          style: {
-            background: '#333',
-            color: '#fff',
-          },
-        });
-        return;
-      }
-
-      deleteTodo(id);
-      if (!error && !loading) {
-        toast.success('Todo Deleted Successfuly', {
-          style: {
-            background: '#333',
-            color: '#fff',
-          },
-        });
-        toast.dismiss(loadingToast);
-      }
-    } catch (err) {
-      toast.error(error as string, {
-        style: {
-          background: '#333',
-          color: '#fff',
-        },
+    } else {
+      toast.error('Failed to delete todo', {
+        style: { background: '#333', color: '#fff' },
       });
     }
   };
@@ -195,91 +120,83 @@ const TodoLayout = () => {
   const logoutHandler = () => {
     logout();
     toast.success('Logged out Successfully', {
-      style: {
-        background: '#333',
-        color: '#fff',
-      },
+      style: { background: '#333', color: '#fff' },
     });
     navigate('/user/signin');
   };
 
   useEffect(() => {
-    getTodos && getTodos();
+    getTodos?.();
   }, []);
 
   useEffect(() => {
     if (error) {
       toast.error(error, {
-        style: {
-          background: '#333',
-          color: '#fff',
-        },
+        style: { background: '#333', color: '#fff' },
       });
-      if (clearError) {
-        clearError();
-      }
+      clearError?.();
     }
   }, [error]);
 
   return (
-    <div className='w-[100vw]'>
-      <div className='w-full flex justify-center text-center my-8'>
-        <p className='font-bold text-4xl'>TODO App</p>
+    <div className="min-h-screen bg-drip-bg text-drip-contrast font-drip px-6 py-4">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-4xl font-bold drop-shadow-drip">DoneDrip Dashboard</h1>
+        <Button text="Logout" onClick={logoutHandler} variant="danger" />
       </div>
-      <div className='absolute flex justify-center space-x-6 top-8 right-8'>
-        <Link to='https://twitter.com/its_ikD' target='_blank'>
-          <img src={twitterIcon} alt='twitter' className='w-10 h-10' />
-        </Link>
-        <Link to='https://github.com/its-id/TODO-MERN-APP' target='_blank'>
-          <img src={githubIcon} alt='github' className='w-10 h-10' />
-        </Link>
-        <Button
-          text='Logout'
-          styleClass='py-1'
-          onClick={logoutHandler}
-          variant='danger'
-        />
-      </div>
-      <div className='flex w-[95%] mx-auto gap-8'>
-        <div className='add-todo-container w-1/4'>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {/* Add Todo Form */}
+        <div className="col-span-1">
           <Input
-            type='text'
-            name='title'
+            type="text"
+            name="title"
+            placeholder="Todo Title"
             value={currTodo.title}
-            placeholder='Enter Todo Title'
-            styleClass='mb-4 shadow-md shadow-emerald-700'
             onChange={onInputChange}
           />
           <Input
-            type='text'
-            name='description'
+            type="text"
+            name="description"
+            placeholder="Todo Description"
             value={currTodo.description}
-            placeholder='Enter Todo Description'
-            styleClass='mb-4 shadow-md shadow-emerald-700'
             onChange={onInputChange}
           />
-          <Button text='Add Todo' onClick={addTodoHandler} />
+          <Button
+            text="Add Todo"
+            onClick={addTodoHandler}
+            className="w-full mt-2"
+            type="button"
+          />
         </div>
-        <div className='w-3/4 max-h-[95vh] flex flex-col gap-4'>
+
+        {/* Todo List */}
+        <div className="col-span-3 space-y-4">
           {todoLoading ? (
             <TodosLoader />
           ) : (
-            todos &&
             todos?.length > 0 &&
-            todos.map((todo, idx) => {
-              return (
+            todos.map((todo, idx) => (
+              todo?._id && (
                 <TodoItem
-                  key={idx}
+                  key={todo._id}
                   todo={todo}
-                  id={todo._id as string}
+                  id={todo._id}
                   deleteTodoHandler={deleteTodoHandler}
                   markAsDone={markCompleteHandler}
                 />
-              );
-            })
+              )
+            ))
           )}
         </div>
       </div>
+
+      <div className="mt-10 flex items-center justify-center">
+        <Link to="https://github.com/Barrak-07" target="_blank" rel="noreferrer">
+          <img src={githubIcon} alt="GitHub" className="w-10 h-10" />
+        </Link>
+      </div>
+
       <Toaster />
     </div>
   );

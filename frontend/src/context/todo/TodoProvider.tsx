@@ -1,6 +1,5 @@
-import { useReducer } from 'react';
+import { useReducer, useEffect, ReactNode } from 'react';
 import axios from 'axios';
-
 import {
   GET_TODOS,
   CREATE_TODO,
@@ -16,7 +15,11 @@ import TodoContext from './TodoContext';
 import { Todo } from '../../types/todo';
 import setAuthToken from '../../utils/SetAuthToken';
 
-const TodoProvider = (props: any) => {
+interface Props {
+  children: ReactNode;
+}
+
+const TodoProvider = ({ children }: Props) => {
   const initialState = {
     todos: [],
     loading: false,
@@ -26,103 +29,94 @@ const TodoProvider = (props: any) => {
 
   const [state, dispatch] = useReducer(TodoReducer, initialState);
 
-  const url = import.meta.env.VITE_BACKEND_URL; //or 'http://localhost:3001';
+  const url = import.meta.env.VITE_BACKEND_URL;
 
-  const getTodos = async () => {
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      getTodos();
+    }
+  }, []);
+
+  const getTodos = async (): Promise<void> => {
     try {
-      if (localStorage.token) {
-        setAuthToken(localStorage.token);
-      }
+      const token = localStorage.getItem('token');
+      if (token) setAuthToken(token);
+
       dispatch({ type: SET_TODO_LOADING });
-      const res = await axios.get(url + '/todos');
-      dispatch({
-        type: GET_TODOS,
-        payload: res.data.todos,
-      });
+
+      const res = await axios.get(`${url}/todos`);
+      dispatch({ type: GET_TODOS, payload: res.data.todos });
     } catch (err: any) {
-      console.log(err.response.data.error);
       dispatch({
         type: TODO_FAIL,
-        payload: err.response.data.error,
+        payload: err?.response?.data?.error || 'Error fetching todos',
       });
     }
   };
 
-  const createTodo = async (todo: Todo) => {
+  const createTodo = async (todo: Todo): Promise<boolean> => {
     try {
-      if (localStorage.token) {
-        setAuthToken(localStorage.token);
-      }
-      dispatch({
-        type: SET_LOADING,
-      });
-      const res = await axios.post(url + '/todos', todo);
-      dispatch({
-        type: CREATE_TODO,
-        payload: {
-          title: res.data.todo.title,
-          description: res.data.todo.description,
-          completed: res.data.todo.completed,
-          _id: res.data.todo._id,
-          createdAt: res.data.todo.createdAt,
-        },
-      });
+      const token = localStorage.getItem('token');
+      if (token) setAuthToken(token);
+
+      dispatch({ type: SET_LOADING });
+
+      const res = await axios.post(`${url}/todos`, todo);
+      dispatch({ type: CREATE_TODO, payload: res.data.todo });
+
+      return true;
     } catch (err: any) {
-      console.log(err.response.data.error);
       dispatch({
         type: TODO_FAIL,
-        payload: err.response.data.error,
+        payload: err?.response?.data?.error || 'Failed to create todo',
       });
+      return false;
     }
   };
 
-  const deleteTodo = async (id: string) => {
+  const deleteTodo = async (id: string): Promise<boolean> => {
     try {
-      if (localStorage.token) {
-        setAuthToken(localStorage.token);
-      }
-      dispatch({
-        type: SET_LOADING,
-      });
-      dispatch({
-        type: DELETE_TODO,
-        payload: id,
-      });
-      await axios.delete(url + `/todos/${id}`);
+      const token = localStorage.getItem('token');
+      if (token) setAuthToken(token);
+
+      dispatch({ type: SET_LOADING });
+
+      await axios.delete(`${url}/todos/${id}`);
+      dispatch({ type: DELETE_TODO, payload: id });
+
+      return true;
     } catch (err: any) {
-      console.log(err.response.data.error);
       dispatch({
         type: TODO_FAIL,
-        payload: err.response.data.error,
+        payload: err?.response?.data?.error || 'Failed to delete todo',
       });
+      return false;
     }
   };
 
-  const markComplete = async (id: string) => {
+  const markComplete = async (id: string): Promise<boolean> => {
     try {
-      if (localStorage.token) {
-        setAuthToken(localStorage.token);
-      }
-      dispatch({
-        type: MARK_COMPLETE,
-        payload: id,
-      });
-      await axios.put(url + '/todos', {
-        id,
-      });
+      const token = localStorage.getItem('token');
+      if (token) setAuthToken(token);
+
+      dispatch({ type: SET_LOADING });
+
+      await axios.put(`${url}/todos`, { id });
+      dispatch({ type: MARK_COMPLETE, payload: id });
+
+      return true;
     } catch (err: any) {
-      console.log(err.response.data.error);
       dispatch({
         type: TODO_FAIL,
-        payload: err.response.data.error,
+        payload: err?.response?.data?.error || 'Failed to mark as done',
       });
+      return false;
     }
   };
 
-  const clearError = () => {
-    dispatch({
-      type: CLEAR_ERROR,
-    });
+  const clearError = (): void => {
+    dispatch({ type: CLEAR_ERROR });
   };
 
   return (
@@ -139,7 +133,7 @@ const TodoProvider = (props: any) => {
         deleteTodo,
       }}
     >
-      {props.children}
+      {children}
     </TodoContext.Provider>
   );
 };

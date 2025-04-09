@@ -1,132 +1,116 @@
-import { useEffect, useReducer } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
-
-import setAuthToken from '../../utils/SetAuthToken';
-import {
-  SIGNUP_USER,
-  LOGIN_USER,
-  GET_USER,
-  AUTH_FAIL,
-  SET_LOADING,
-  CLEAR_ERROR,
-  LOGOUT_USER,
-} from '../types';
-import AuthReducer from './AuthReducer';
 import AuthContext from './AuthContext';
-import { User } from '../../types/user';
+import { User, UserState } from '../../types/user';
 
-const AuthProvider = (props: any) => {
-  const initialState = {
-    user: null,
-    loading: false,
-    isRegistered: false,
-    isAuthenticated: false,
-    error: null,
+const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isRegistered, setIsRegistered] = useState(false);
+
+  const signup = async (formData: User) => {
+    try {
+      setLoading(true);
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/user/signup`,
+        formData,
+        { withCredentials: true }
+      );
+      if (response.status === 200) {
+        setIsRegistered(true);
+        setError('');
+      }
+    } catch (err: any) {
+      setError(err?.response?.data?.error || 'Signup failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const [state, dispatch] = useReducer(AuthReducer, initialState);
+  const signin = async (formData: User) => {
+    try {
+      setLoading(true);
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/user/signin`,
+        formData,
+        { withCredentials: true }
+      );
+      if (response.status === 200) {
+        localStorage.setItem('token', response.data.token);
+        setIsAuthenticated(true);
+        setError('');
+        await loadUser();
+      }
+    } catch (err: any) {
+      setError(err?.response?.data?.error || 'Signin failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const url = import.meta.env.VITE_BACKEND_URL; //or 'http://localhost:3001';
-
-  // Set token and load user
   const loadUser = async () => {
-    if (localStorage.token) {
-      setAuthToken(localStorage.token);
-    } else {
-      return;
-    }
-    dispatch({ type: SET_LOADING });
     try {
-      const res = await axios.get(url + '/user/auth');
-      dispatch({
-        type: GET_USER,
-        payload: res.data,
-      });
-    } catch (err: any) {
-      dispatch({ type: AUTH_FAIL, payload: err.response.data.error });
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/user/auth`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
+      );
+
+      if (response.status === 200) {
+        setUser(response.data);
+        setIsAuthenticated(true);
+      }
+    } catch {
+      setUser(null);
+      setIsAuthenticated(false);
     }
   };
 
-  // Signup
-  const signup = async (user: User) => {
-    try {
-      dispatch({ type: SET_LOADING });
-      const config = {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      };
-      const res = await axios.post(url + '/user/signup', user, config);
-      dispatch({
-        type: SIGNUP_USER,
-        payload: res.data,
-      });
-      // await loadUser();
-    } catch (err: any) {
-      dispatch({
-        type: AUTH_FAIL,
-        payload: err.response.data.error,
-      });
-      throw new Error(err.response.data.error);
-    }
-  };
-
-  // Login
-  const signin = async (user: User) => {
-    try {
-      dispatch({ type: SET_LOADING });
-      const config = {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      };
-      const res = await axios.post(url + '/user/signin', user, config);
-      dispatch({
-        type: LOGIN_USER,
-        payload: res.data,
-      });
-      // await loadUser();
-    } catch (err: any) {
-      dispatch({
-        type: AUTH_FAIL,
-        payload: err.response.data.error,
-      });
-      throw new Error(err.response.data.error);
-    }
-  };
-
-  // Logout
   const logout = () => {
-    dispatch({ type: SET_LOADING });
-    dispatch({ type: LOGOUT_USER });
+    localStorage.removeItem('token');
+    setUser(null);
+    setIsAuthenticated(false);
   };
 
-  const clearError = () => {
-    dispatch({
-      type: CLEAR_ERROR,
-    });
-  };
+  const clearError = () => setError('');
 
   useEffect(() => {
-    loadUser();
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    // safe async pattern
+    const init = async () => {
+      await loadUser();
+    };
+
+    init();
   }, []);
 
+  const value: UserState = {
+    loading,
+    error,
+    user,
+    isAuthenticated,
+    isRegistered,
+    signup,
+    signin,
+    logout,
+    loadUser,
+    clearError,
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        loading: state.loading,
-        user: state.user,
-        isRegistered: state.isRegistered,
-        isAuthenticated: state.isAuthenticated,
-        error: state.error,
-        signup,
-        signin,
-        logout,
-        loadUser,
-        clearError,
-      }}
-    >
-      {props.children}
+    <AuthContext.Provider value={value}>
+      {children}
     </AuthContext.Provider>
   );
 };

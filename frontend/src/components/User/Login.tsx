@@ -2,17 +2,20 @@ import { useEffect, useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 
-//components imports
+
+
+//components
 import Button from '../common/Button';
 import Input from '../common/Input';
 
-//types imports
+//types
 import { User, UserState } from '../../types/user';
 
-//context imports
+//context
 import AuthContext from '../../context/auth/AuthContext';
 
-const Login = ({ context: path }: any) => {
+
+const Login = () => {
   const navigate = useNavigate();
 
   const [user, setUser] = useState<User>({
@@ -25,31 +28,19 @@ const Login = ({ context: path }: any) => {
     useContext<UserState>(AuthContext);
 
   const checkValid = () => {
-    if (
-      user.email === '' ||
-      user.password === '' ||
-      user.confirmPassword === '' ||
-      user.username === ''
-    ) {
+    if (user.email === '' || user.password === '') {
       toast.error('Please fill all the fields', {
-        style: {
-          background: '#333',
-          color: '#fff',
-        },
+        style: { background: '#333', color: '#fff' },
       });
       return false;
     }
-
     return true;
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const loadingToast = toast.loading('Logging In...', {
-      style: {
-        background: '#333',
-        color: '#fff',
-      },
+      style: { background: '#333', color: '#fff' },
     });
 
     if (!checkValid() || !signin) {
@@ -60,15 +51,14 @@ const Login = ({ context: path }: any) => {
     try {
       setLogin(true);
       await signin(user);
+
+      toast.dismiss(loadingToast);
+
       if (!error) {
         toast.success('Logged in Successfully', {
-          style: {
-            background: '#333',
-            color: '#fff',
-          },
+          style: { background: '#333', color: '#fff' },
         });
       }
-      toast.dismiss(loadingToast);
     } catch (err: any) {
       toast.dismiss(loadingToast);
     }
@@ -76,31 +66,22 @@ const Login = ({ context: path }: any) => {
 
   const onInputChangeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-
-    setUser((prevUser) => ({
-      ...prevUser,
-      [name]: value,
-    }));
+    setUser((prevUser) => ({ ...prevUser, [name]: value }));
   };
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/');
+      navigate('/todos'); // ✅ fixed to avoid loop
     }
-  }, [isAuthenticated, path]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (error) {
       setLogin(false);
       toast.error(error, {
-        style: {
-          background: '#333',
-          color: '#fff',
-        },
+        style: { background: '#333', color: '#fff' },
       });
-      if (clearError) {
-        clearError();
-      }
+      clearError?.();
     }
   }, [error]);
 
@@ -115,12 +96,9 @@ const Login = ({ context: path }: any) => {
 
         <div className='mt-8 sm:mx-auto sm:w-full sm:max-w-md'>
           <div className='bg-gray-600/50 py-8 px-4 shadow sm:rounded-lg sm:px-10'>
-            <div className='flex flex-col gap-6'>
+            <form className='flex flex-col gap-6' onSubmit={handleSubmit}>
               <div>
-                <label
-                  htmlFor='email'
-                  className='block text-sm font-medium text-slate-200'
-                >
+                <label htmlFor='email' className='block text-sm font-medium text-slate-200'>
                   Email address
                 </label>
                 <div className='mt-1'>
@@ -133,16 +111,13 @@ const Login = ({ context: path }: any) => {
                     onChange={onInputChangeHandler}
                   />
                 </div>
+                <p className='text-sm text-slate-400 mt-1'>
+                  Only accepting Gmail, Yahoo and Outlook emails
+                </p>
               </div>
-              <p className='-mt-4 text-sm text-slate-400'>
-                Only accepting Gmail, Yahoo and Outlook emails
-              </p>
 
               <div>
-                <label
-                  htmlFor='password'
-                  className='block text-sm font-medium text-gray-200'
-                >
+                <label htmlFor='password' className='block text-sm font-medium text-gray-200'>
                   Password
                 </label>
                 <div className='mt-1'>
@@ -157,23 +132,14 @@ const Login = ({ context: path }: any) => {
                 </div>
               </div>
 
-              <div>
-                <Button
-                  text={login ? 'Signing In..' : 'Sign In'}
-                  onClick={handleSubmit}
-                  variant='success'
-                />
-              </div>
+              <Button text={login ? 'Signing In..' : 'Sign In'} type='submit' variant='success' />
 
               <div className='text-sm'>
-                <Link
-                  to='/user/signup'
-                  className='text-emerald-400 hover:text-emerald-500'
-                >
+                <Link to='/user/signup' className='text-emerald-400 hover:text-emerald-500'>
                   Don't have an account? Sign Up
                 </Link>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       </div>

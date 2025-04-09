@@ -9,6 +9,7 @@ dotenv.config();
 
 const app = express();
 const port = 3001;
+console.log('DB_URL:', process.env.DB_URL);console.log('DB_URL:', process.env.DB_URL);
 mongoose.connect(process.env.DB_URL as string);
 
 app.use(

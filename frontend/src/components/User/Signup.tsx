@@ -2,17 +2,17 @@ import { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 
-//components imports
+//components
 import Button from '../common/Button';
 import Input from '../common/Input';
 
-//types imports
+//types
 import { User, UserState } from '../../types/user';
 
-//context imports
+//context
 import AuthContext from '../../context/auth/AuthContext';
 
-const Signup = ({ context: path }: any) => {
+const Signup = () => {
   const navigate = useNavigate();
 
   const [user, setUser] = useState<User>({
@@ -27,27 +27,17 @@ const Signup = ({ context: path }: any) => {
     useContext<UserState>(AuthContext);
 
   const checkValid = () => {
-    if (
-      user.email === '' ||
-      user.password === '' ||
-      user.confirmPassword === '' ||
-      user.username === ''
-    ) {
+    const { email, password, confirmPassword, username } = user;
+    if (!email || !password || !confirmPassword || !username) {
       toast.error('Please fill all the fields', {
-        style: {
-          background: '#333',
-          color: '#fff',
-        },
+        style: { background: '#333', color: '#fff' },
       });
       return false;
     }
 
-    if (user.password !== user.confirmPassword) {
+    if (password !== confirmPassword) {
       toast.error('Passwords do not match', {
-        style: {
-          background: '#333',
-          color: '#fff',
-        },
+        style: { background: '#333', color: '#fff' },
       });
       return false;
     }
@@ -58,11 +48,9 @@ const Signup = ({ context: path }: any) => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const loadingToast = toast.loading('Signing Up...', {
-      style: {
-        background: '#333',
-        color: '#fff',
-      },
+      style: { background: '#333', color: '#fff' },
     });
+
     if (!checkValid()) {
       toast.dismiss(loadingToast);
       return;
@@ -70,74 +58,43 @@ const Signup = ({ context: path }: any) => {
 
     setRegistering(true);
     try {
-      signup &&
-        (await signup({
+      if (signup) {
+        await signup({
           email: user.email,
           password: user.password,
           username: user.username,
-        }));
+        });
+      }
 
+      toast.dismiss(loadingToast);
       if (!error) {
         toast.success('Signed Up Successfully', {
-          style: {
-            background: '#333',
-            color: '#fff',
-          },
+          style: { background: '#333', color: '#fff' },
         });
-        console.log('success', error);
-        toast.dismiss(loadingToast);
       }
-    } catch (err: any) {
+    } catch (err) {
       toast.dismiss(loadingToast);
     }
-
-    // if (error) {
-    //   console.log('error', error);
-    //   toast.dismiss(loadingToast);
-    //   toast.error(`${error} <- from signup` || 'Some error occurred', {
-    //     style: {
-    //       background: '#333',
-    //       color: '#fff',
-    //     },
-    //   });
-    // } else {
-    //   toast.success('Signed Up Successfully', {
-    //     style: {
-    //       background: '#333',
-    //       color: '#fff',
-    //     },
-    //   });
-    //   console.log('success', error);
-    //   toast.dismiss(loadingToast);
-    //   navigate('/');
-    // }
   };
 
   const onInputChangeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-
-    setUser((prevUser) => ({
-      ...prevUser,
-      [name]: value,
-    }));
+    setUser((prev) => ({ ...prev, [name]: value }));
   };
 
   useEffect(() => {
     if (isRegistered) {
-      navigate('/');
+      navigate('/todos');
     }
-  }, [isRegistered, path]);
+  }, [isRegistered]);
 
   useEffect(() => {
     if (error) {
       setRegistering(false);
       toast.error(error, {
-        style: {
-          background: '#333',
-          color: '#fff',
-        },
+        style: { background: '#333', color: '#fff' },
       });
-      clearError && clearError();
+      clearError?.();
     }
   }, [error]);
 
@@ -152,12 +109,9 @@ const Signup = ({ context: path }: any) => {
 
         <div className='mt-8 sm:mx-auto sm:w-full sm:max-w-md'>
           <div className='bg-gray-600/50 py-8 px-4 shadow sm:rounded-lg sm:px-10'>
-            <div className='flex flex-col gap-6'>
+            <form className='flex flex-col gap-6' onSubmit={handleSubmit}>
               <div>
-                <label
-                  htmlFor='email'
-                  className='block text-sm font-medium text-slate-200'
-                >
+                <label htmlFor='username' className='block text-sm font-medium text-slate-200'>
                   Username
                 </label>
                 <div className='mt-1'>
@@ -172,10 +126,7 @@ const Signup = ({ context: path }: any) => {
               </div>
 
               <div>
-                <label
-                  htmlFor='email'
-                  className='block text-sm font-medium text-slate-200'
-                >
+                <label htmlFor='email' className='block text-sm font-medium text-slate-200'>
                   Email address
                 </label>
                 <div className='mt-1'>
@@ -188,16 +139,13 @@ const Signup = ({ context: path }: any) => {
                     onChange={onInputChangeHandler}
                   />
                 </div>
+                <p className='text-sm text-slate-400 mt-1'>
+                  Only accepting Gmail, Yahoo and Outlook emails
+                </p>
               </div>
-              <p className='-mt-4 text-sm text-slate-400'>
-                Only accepting Gmail, Yahoo and Outlook emails
-              </p>
 
               <div>
-                <label
-                  htmlFor='password'
-                  className='block text-sm font-medium text-gray-200'
-                >
+                <label htmlFor='password' className='block text-sm font-medium text-gray-200'>
                   Password
                 </label>
                 <div className='mt-1'>
@@ -213,10 +161,7 @@ const Signup = ({ context: path }: any) => {
               </div>
 
               <div>
-                <label
-                  htmlFor='confirm-password'
-                  className='block text-sm font-medium text-gray-200'
-                >
+                <label htmlFor='confirmPassword' className='block text-sm font-medium text-gray-200'>
                   Confirm Password
                 </label>
                 <div className='mt-1'>
@@ -231,14 +176,12 @@ const Signup = ({ context: path }: any) => {
                 </div>
               </div>
 
-              <div>
-                <Button
-                  text={registering ? 'Signin Up..' : 'Sign Up'}
-                  variant='success'
-                  onClick={handleSubmit}
-                />
-              </div>
-            </div>
+              <Button
+                text={registering ? 'Signing Up..' : 'Sign Up'}
+                type='submit'
+                variant='success'
+              />
+            </form>
           </div>
         </div>
       </div>

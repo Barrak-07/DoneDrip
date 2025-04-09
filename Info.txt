@@ -1,0 +1,119 @@
+**DoneDrip Tech Stack & Interview Cheat Sheet**
+
+---
+
+### 💡 Project Summary
+DoneDrip is a full-stack productivity task manager built using the MERN stack, tailored with a custom dark theme UI. It supports user authentication, task CRUD, and is structured for future scalability with containerization and infrastructure as code.
+
+---
+
+### 💻 Tech Stack Overview
+
+**Frontend (React + Vite)**
+- React (with Hooks + Context API)
+- TypeScript
+- Tailwind CSS
+- React Router
+- Axios
+- React Hot Toast
+
+**Backend (Node.js + Express)**
+- Express.js (with TypeScript)
+- MongoDB Atlas + Mongoose
+- JWT for authentication
+- bcrypt for password hashing
+- dotenv for config
+- deep-email-validator (bypassed in dev)
+
+**DevOps (Planned & Active)**
+- Docker: Containerize frontend/backend
+- Terraform: Infrastructure as code
+- GitHub Actions: CI/CD pipeline setup (planned)
+- Email Services: SendGrid / Nodemailer / AWS SES (planned)
+
+---
+
+### 🔄 App Flow
+1. User signs up (backend validates + hashes password)
+2. User signs in (JWT issued, stored in localStorage)
+3. Authenticated routes are protected via middleware
+4. Todo CRUD operations are scoped to user
+
+---
+
+### 📚 Key Folder Structure Suggestions
+```
+donedrip/
+├── backend/
+│   ├── controllers/
+│   ├── middleware/
+│   ├── models/
+│   ├── routes/
+│   ├── utils/
+│   ├── config/
+│   └── index.ts
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── context/
+│   │   ├── pages/
+│   │   ├── types/
+│   │   ├── hooks/ (optional)
+│   │   ├── services/axios.ts (optional)
+├── docker/
+│   ├── backend.Dockerfile
+│   ├── frontend.Dockerfile
+├── docker-compose.yml
+├── .env / .env.development / .env.production
+```
+
+---
+
+### 💡 Interview Q&A
+
+**General**
+- “Walk me through your project”: Built a MERN stack task manager with JWT auth and MongoDB Atlas backend, styled with Tailwind and planned for Docker + Terraform infra.
+- “How does the frontend talk to backend?”: Through Axios, using `.env` for the base URL, with credentials enabled.
+
+**React**
+- Used Context API for auth/todo state instead of Redux to keep the code lightweight.
+- Used controlled forms and custom toast-based validation.
+
+**Backend**
+- Passwords are hashed with bcrypt.
+- JWT is issued on login and verified with middleware.
+- Deep email validation bypassed in dev via `NODE_ENV` check.
+
+**MongoDB**
+- Used Mongoose schemas, `findOne({ email })` to ensure uniqueness.
+- MongoDB Atlas in production, supports local development fallback.
+
+**DevOps**
+- Dockerfile includes backend/frontend with volumes and ports.
+- `.env` used with dotenv for config.
+- Secrets would be injected in CI/CD with GitHub Actions or cloud secret manager.
+- Terraform to spin up GCP/AWS infra, VPCs, MongoDB cluster, etc.
+
+---
+
+### 🚀 Future Features
+- Email reminders via cron + SendGrid/Nodemailer
+- Push notifications with Firebase
+- Charts with Chart.js or Recharts
+- OAuth2 login with Google/Facebook
+- React Native or Expo mobile version
+
+---
+
+### 🔐 Dev Notes
+- Email validation via deep-email-validator is bypassed in dev:
+```ts
+const isDev = process.env.NODE_ENV !== 'production';
+const { valid } = isDev ? { valid: true } : await isEmailValid(email);
+```
+- Passwords must be >= 6 characters
+
+---
+
+Keep this handy in your `/docs` folder — it’s your go-to quick reference for interviews, deployment, and onboarding others to the DoneDrip project.
+
